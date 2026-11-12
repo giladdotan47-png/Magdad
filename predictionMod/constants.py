@@ -1,0 +1,22 @@
+# data constants
+TRAIN_SIZE = 0.7
+VAL_SIZE = 0.15
+TEST_SIZE = 0.15
+RANDOM_STATE = 42
+TRAINING_FILENAME = "trainingData"
+VALIDATION_FILENAME = "validationData"
+TEST_FILENAME = "testData"
+
+# model constants
+INPUT_DIM = 5
+HIDDEN_DIM = 100
+LAYER_DIM = 2
+OUTPUT_DIM = 1
+
+# training constants
+LEARNING_RATE = 0.1
+
+BATCH_SIZE = 100
+N_ITERS = 3000
+NUM_EPOCHS = N_ITERS / (getNumOfFilesInFolder(TRAINING_FILE_NAME) / BATCH_SIZE)
+NUM_EPOCHS = int(NUM_EPOCHS)
