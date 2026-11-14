@@ -1,12 +1,7 @@
 from constants import *
 from sklearn.model_selection import train_test_split
-import os
-import torch
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms, utils
 
 data = None
 train, valTest = train_test_split(data, test_size=(VAL_SIZE + TEST_SIZE), random_state=RANDOM_STATE)
@@ -16,10 +11,14 @@ val, test = train_test_split(valTest, test_size=TEST_SIZE, random_state=RANDOM_S
 
 # creating pytorch's datasets
 class bottleDataset(Dataset):
+    _filename = None
+    _df = None
     def __init__(self, data_path):
-        pass
+        self._filename = data_path
+        # opening the file
+        self._df = pd.read_csv(data_path, header=None).to_numpy()#, nrows=1)
     def __len__(self):
-        pass
+        return self._df.shape[0]
     def __getitem__(self, idx):
 
 
