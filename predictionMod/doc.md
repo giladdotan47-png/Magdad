@@ -15,9 +15,14 @@ the first input is the video name, e.g. "001"
 then, we are going to repeat the data from each frame in the following manner:
 1. (int) x value of the cap
 2. (int) y value of the cap
-3. (int) x value of the bottle
-4. (int) y value of the bottle
-5. (int) frameRate
+3. (int) z value of the cap
+4. (int) x value of the bottle
+5. (int) y value of the bottle
+6. (int) z value of the bottle
+7. (int) frameRate
+
+if a video has an angle from only one camera, then we can only detect the movement\
+through the xz plane, so we will assume that y=0 and put that in the input .csv file.
 
 for the labels we are also going to save them into one ".csv" file\
 we are going to save them in the following manner:
