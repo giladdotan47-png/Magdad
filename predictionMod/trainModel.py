@@ -1,74 +1,46 @@
 from constants import *
+from dataPreparation import *
 from rnnModel import *
 
-# Number of steps to unroll
-seq_dim = 28
+# running for the first time to the parameters vectors will not be None
+hidden_tensor = model.init_hidden()
+output, next_hidden = model(trainDat[0][0], hidden_tensor)
 
-iter = 0
-for epoch in range(NUM_EPOCHS):
-    for i, (images, labels) in enumerate(train_loader):
-        # Load images as Variable
-        #######################
-        #  USE GPU FOR MODEL  #
-        #######################
-        if torch.cuda.is_available():
-            images = Variable(images.view(-1, seq_dim, INPUT_DIM).cuda())
-            labels = Variable(labels.cuda())
-        else:
-            images = Variable(images.view(-1, seq_dim, INPUT_DIM))
-            labels = Variable(labels)
+def train(line_tensor, y_true):
+    hidden = model.init_hidden()
 
-        # Clear gradients w.r.t. parameters
-        optimizer.zero_grad()
+    for i in range(line_tensor.size()[0]):
+        output, hidden = model(line_tensor[i], hidden)
 
-        # Forward pass to get output/logits
-        # outputs.size() --> 100, 10
-        outputs = model(images)
+    loss = criterion(output, y_true)
 
-        # Calculate Loss: softmax --> cross entropy loss
-        loss = criterion(outputs, labels)
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
 
-        # Getting gradients w.r.t. parameters
-        loss.backward()
+    return output, loss.item()
 
-        # Updating parameters
-        optimizer.step()
 
-        iter += 1
 
-        if iter % 500 == 0:
-            # Calculate Accuracy
-            correct = 0
-            total = 0
-            # Iterate through test dataset
-            for images, labels in test_loader:
-                #######################
-                #  USE GPU FOR MODEL  #
-                #######################
-                if torch.cuda.is_available():
-                    images = Variable(images.view(-1, seq_dim, input_dim).cuda())
-                else:
-                    images = Variable(images.view(-1, seq_dim, input_dim))
+current_loss = 0
+all_losses = []
+plot_steps, print_steps = 1000, 5000
+n_iters = 100000
+for i in range(n_iters):
+    category, line, category_tensor, line_tensor = random_training_example(category_lines, all_categories)
+    #print(line_tensor.shape, category_tensor.shape)
+    output, loss = train(line_tensor, category_tensor)
+    current_loss += loss
 
-                # Forward pass only to get logits/output
-                outputs = model(images)
+    if (i + 1) % plot_steps == 0:
+        all_losses.append(current_loss / plot_steps)
+        current_loss = 0
 
-                # Get predictions from the maximum value
-                _, predicted = torch.max(outputs.data, 1)
+    if (i + 1) % print_steps == 0:
+        guess = category_from_output(output)
+        correct = "CORRECT" if guess == category else f"WRONG ({category})"
+        print(f"{i + 1} {(i + 1) / n_iters * 100} {loss:.4f} {line} / {guess} {correct}")
 
-                # Total number of labels
-                total += labels.size(0)
-
-                # Total correct predictions
-                #######################
-                #  USE GPU FOR MODEL  #
-                #######################
-                if torch.cuda.is_available():
-                    correct += (predicted.cpu() == labels.cpu()).sum()
-                else:
-                    correct += (predicted == labels).sum()
-
-            accuracy = 100 * correct / total
-
-            # Print Loss
-            print('Iteration: {}. Loss: {}. Accuracy: {}'.format(iter, loss.data[0], accuracy))
+plt.figure()
+plt.plot(all_losses)
+plt.show()
