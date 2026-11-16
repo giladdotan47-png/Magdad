@@ -8,8 +8,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-INPUT_DIR = Path(r"C:\Users\TLP\.vscode\Magdad\predictionMod\Lable\long_vids_120fps")   # TODO
-OUTPUT_DIR = Path(r"C:\Users\TLP\.vscode\Magdad\predictionMod\Lable\naive_clipped_vids_120fps")  # TODO
+INPUT_DIR = Path(r"C:\Users\TLP\Desktop\magdad\predictionMod\preprocessed")   # TODO
+OUTPUT_DIR = Path(r"C:\Users\TLP\Desktop\magdad\predictionMod\seperated")  # TODO
 SEGMENT_SECONDS = 5
 
 # True  = exact 5s cuts, re-encodes the video (slower, tiny quality loss)

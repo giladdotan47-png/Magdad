@@ -9,19 +9,20 @@ class RNN(nn.Module):
 
         self.hidden_size = hidden_size
         self.i2h = nn.Linear(input_size + hidden_size, hidden_size)
+
         self.i2o = nn.Linear(input_size + hidden_size, output_size)
 
     def forward(self, input_tensor, hidden_tensor):
         combined = torch.cat((input_tensor, hidden_tensor), 1)
 
         hidden = self.i2h(combined)
+
         output = self.i2o(combined)
-        output = self.softmax(output)
         return output, hidden
 
 
     def init_hidden(self):
-        return torch.zeros(1, self.hidden_size)
+        return torch.zeros((1, self.hidden_size))
     ################################################################################################################################################################################################################################################################################################################################
 #    def __init__(self, input_dim, hidden_dim, layer_dim, output_dim):
 #        super(RNNModel, self).__init__()
@@ -60,13 +61,17 @@ class RNN(nn.Module):
 # generating the model
 model = RNN(INPUT_DIM, HIDDEN_DIM, OUTPUT_DIM)
 
-# checking whether we have a GPU available
-device = torch.device('cpu')
-if torch.cuda.is_available():
-    device = torch.device('cuda')
+#if torch.cuda.is_available():
+#    model.cuda()
 
-torch.set_default_device(device)
+optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
+
+# checking whether we have a GPU available
+#device = torch.device('cpu')
+#if torch.cuda.is_available():
+#    device = torch.device('cuda')
+
+#torch.set_default_device(device)
 
 # deciding on the loss
-criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
+criterion = nn.MSELoss()

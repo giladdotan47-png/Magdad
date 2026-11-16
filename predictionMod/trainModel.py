@@ -1,46 +1,72 @@
 from constants import *
 from dataPreparation import *
 from rnnModel import *
+import matplotlib.pyplot as plt
 
-# running for the first time to the parameters vectors will not be None
-hidden_tensor = model.init_hidden()
-output, next_hidden = model(trainDat[0][0], hidden_tensor)
 
-def train(line_tensor, y_true):
-    hidden = model.init_hidden()
-
-    for i in range(line_tensor.size()[0]):
-        output, hidden = model(line_tensor[i], hidden)
-
-    loss = criterion(output, y_true)
+def test_train(line_tensor):
+    # 1. Save a copy of a weight tensor before stepping
+    before = next(model.parameters()).clone()
 
     optimizer.zero_grad()
+    hidden = model.init_hidden()
+
+    targets = line_tensor[1]
+    output, hidden = model(line_tensor[0], hidden)
+    output = torch.nan_to_num(output, nan=-1.0)
+
+    loss = criterion(output, targets)
+    loss.backward()
+
+    # 2. Check if gradients exist and are non-zero
+    for name, param in model.named_parameters():
+        if param.grad is None:
+            print(f"No gradient for {name} (Graph broken or frozen)")
+        elif torch.all(param.grad == 0):
+            print(f"Zero gradient for {name} (Vanishing grad or dead ReLU)")
+
+    optimizer.step()
+
+    # 3. Check if the weights actually changed
+    after = next(model.parameters())
+    print("Weights updated:", not torch.equal(before, after))
+
+    return loss.item()
+
+def true_train(line_tensor):
+    hidden = model.init_hidden()
+    optimizer.zero_grad()
+    totalLoss = 0
+    tOutputs = line_tensor[:-1]
+    pOutputs = torch.zeros((line_tensor.shape[0]-1, line_tensor.shape[1], line_tensor.shape[2]))
+    for i in range(line_tensor.size()[0] - 1):
+        output, hidden = model(line_tensor[i], hidden)
+        pOutputs[i] = output
+
+    pOutputs = torch.nan_to_num(pOutputs, nan=-1.0)
+
+    loss = criterion(pOutputs, tOutputs)
+    totalLoss += loss.item()
+
     loss.backward()
     optimizer.step()
 
-    return output, loss.item()
-
-
+    return totalLoss
 
 current_loss = 0
 all_losses = []
-plot_steps, print_steps = 1000, 5000
-n_iters = 100000
-for i in range(n_iters):
-    category, line, category_tensor, line_tensor = random_training_example(category_lines, all_categories)
-    #print(line_tensor.shape, category_tensor.shape)
-    output, loss = train(line_tensor, category_tensor)
-    current_loss += loss
+for i in range(N_ITERS):
+    vid = trainDat.getRandVid()
+    vid = trainDat[i % len(trainDat)]
+    loss = train(vid)
 
-    if (i + 1) % plot_steps == 0:
-        all_losses.append(current_loss / plot_steps)
-        current_loss = 0
+    all_losses.append(loss)
 
-    if (i + 1) % print_steps == 0:
-        guess = category_from_output(output)
-        correct = "CORRECT" if guess == category else f"WRONG ({category})"
-        print(f"{i + 1} {(i + 1) / n_iters * 100} {loss:.4f} {line} / {guess} {correct}")
+    if (i + 1) % PRINT_STEPS == 0:
+        print(f"iter: {i}, loss = {loss}")
 
+print(all_losses)
 plt.figure()
 plt.plot(all_losses)
 plt.show()
+
