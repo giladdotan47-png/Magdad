@@ -3,30 +3,39 @@ from dataPreparation import *
 from rnnModel import *
 import matplotlib.pyplot as plt
 
-
+# training function for spotting memory errors
 def train(inputs, label):
+    # making the values small
     inputs = inputs / 2000
     label = label / 2000
+
+
     # 1. Save a copy of a weight tensor before stepping
     before = next(model.parameters()).clone()
 
     hidden = model.init_hidden()
+    optimizer.zero_grad()
 
     output, hidden = model(inputs, hidden)
-    print(label)
-    print(inputs)
-    print(output)
+    print(f"labels = {label}")
+    print(f"inputs = {inputs}")
+    print(f"output = {output}")
     input(":")
 
     loss = criterion(output, label)
-    optimizer.zero_grad()
     print(loss)
+    # calculating the gradient
     loss.backward()
 
+    #for name, param in model.named_parameters():
+    #    print(name, param.requires_grad, param.grad is not None,
+    #          param.grad.abs().mean() if param.grad is not None else None)
+    #    print("-----------------------------------------------")
+
+    # checking if something changed
     for name, param in model.named_parameters():
-        print(name, param.requires_grad, param.grad is not None,
-              param.grad.abs().mean() if param.grad is not None else None)
-        print("-----------------------------------------------")
+        if param.requires_grad:
+            print(name, "GRAD", param.grad is not None, param.grad.abs().sum() if param.grad is not None else "None")
 
     # 2. Check if gradients exist and are non-zero
     for name, param in model.named_parameters():
@@ -43,6 +52,7 @@ def train(inputs, label):
 
     return loss.item()
 
+# true training function
 def true_train(line_tensor):
     hidden = model.init_hidden()
     optimizer.zero_grad()
@@ -66,10 +76,12 @@ def true_train(line_tensor):
 current_loss = 0
 all_losses = []
 for i in range(N_ITERS):
+    # loading the video
     #vid = trainDat.getRandVid()
     vid = trainDat[i % len(trainDat)]
     #loss = train(vid)
 
+    # checking whether we have a GPU
     if torch.cuda.is_available():
         inputs = Variable(vid[0].cuda())
         target = Variable(vid[1].cuda())
@@ -77,6 +89,7 @@ for i in range(N_ITERS):
         inputs = Variable(vid[0])
         target = Variable(vid[1])
 
+    # doing one step of training
     loss = train(inputs, target)
 
     all_losses.append(loss)
