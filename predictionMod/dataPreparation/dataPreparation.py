@@ -1,16 +1,27 @@
 import random
-from constants import *
+from .constants import *
 from sklearn.model_selection import train_test_split
 import pandas as pd
-from torch.utils.data import Dataset, DataLoader
 import torch
-import numpy as np
+from torch.utils.data import Dataset
 
-def splitNewData(data):
-    train, valTest = train_test_split(data, test_size=(VAL_SIZE + TEST_SIZE), random_state=RANDOM_STATE)
-    val, test = train_test_split(valTest, test_size=TEST_SIZE / (VAL_SIZE + TEST_SIZE), random_state=RANDOM_STATE)
+def splitNewData() -> None:
+    if training_data_path is not None:
+        trainingData = pd.read_csv(training_data_path).to_numpy()
+        newXTrain, newValTestTrain = train_test_split(trainingData, test_size=(VAL_SIZE + TEST_SIZE), random_state=RANDOM_STATE)
+        newValTrain, newTestTrain = train_test_split(newValTestTrain, test_size=TEST_SIZE / (VAL_SIZE + TEST_SIZE), random_state=RANDOM_STATE)
 
-# add save to files
+        # add save to files
+        xTrainFile = pd.read_csv(TRAINING_DATA_FILENAME, header = None)
+        xTrainFile = xTrainFile.append(pd.DataFrame(newXTrain, columns=xTrainFile.columns), ignore_index=True)
+        xTrainFile.to_csv(TRAINING_DATA_FILENAME, index=False)
+
+    if labels_data_path is not None:
+        labelsData = pd.read_csv(training_data_path).to_numpy()
+        newXLabels, newValTestLabels = train_test_split(labelsData, test_size=(VAL_SIZE + TEST_SIZE), random_state=RANDOM_STATE)
+        newValTrain, newTestTrain = train_test_split(newValTestLabels, test_size=TEST_SIZE / (VAL_SIZE + TEST_SIZE), random_state=RANDOM_STATE)
+
+        # add save to files
 
 # creating pytorch's datasets
 class bottleDataset(Dataset):
@@ -65,12 +76,15 @@ class bottleDataset(Dataset):
         return self.getVid(idx)
 
 
-# creating pytorch's dataloaders
-xTrain = bottleDataset(TRAINING_DATA_FILENAME)
-yTrain = bottleDataset(TRAINING_LABELS_FILENAME)
+def loadSets():
+    # creating pytorch's dataloaders
+    xTrain = bottleDataset(TRAINING_DATA_FILENAME)
+    yTrain = bottleDataset(TRAINING_LABELS_FILENAME)
 
-xVal = bottleDataset(VALIDATION_DATA_FILENAME)
-yVal = bottleDataset(VALIDATION_LABELS_FILENAME)
+    xVal = bottleDataset(VALIDATION_DATA_FILENAME)
+    yVal = bottleDataset(VALIDATION_LABELS_FILENAME)
 
-xTest = bottleDataset(TEST_DATA_FILENAME)
-yTest = bottleDataset(TEST_LABELS_FILENAME)
+    xTest = bottleDataset(TEST_DATA_FILENAME)
+    yTest = bottleDataset(TEST_LABELS_FILENAME)
+
+    return xTrain, yTrain, xVal, yVal

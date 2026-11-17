@@ -1,6 +1,6 @@
-from rnnModel import model, optimizer, criterion
+from .rnnModel import model, optimizer, criterion
 import torch
-from constants import N_ITERS
+from .constants import N_ITERS
 import matplotlib.pyplot as plt
 import random
 

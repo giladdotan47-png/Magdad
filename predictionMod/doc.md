@@ -48,6 +48,7 @@ for example: if we are saving the input data from vid number "002" in line 3,
 then the labels from that video should also be in line 3 in the labels file
 2. the input data from the frames should not pass the frame the label if from.
 for example, if we aim for frame number 20, we should add the inputs from frames 1~19
+3. the csv should not save the columns' names, that is, we only want to save the data.
 <br>
 <br>
 <br>

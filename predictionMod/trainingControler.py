@@ -1,8 +1,7 @@
 # importing the different models:
-from trainingModels.trainModel_nextFrame import trainModel_nextFrame
-from trainingModels.trainModel_nextFrame import trainModel_nextFrame
-from trainingModels.trainModel_horizontalFrame import trainModel_horizontalFrame
-from dataPreparation import xTrain, yTrain, xVal, yVal, xTest, yTest
+from trainingModels import horizontalFrameModel
+from trainingModels import nextFrameModel
+from predictionMod.dataPreparation.dataPreparation import splitNewData, loadSets
 
 # first, we check if we have new data parsed:
 userInput = ""
@@ -11,11 +10,14 @@ while userInput not in ["y", "n"]:
     userInput = input("(y/n):")
 
 if userInput == "y":
+    splitNewData()
     # separate the data
     # label the data
     # add to one csv file
     # split into training / validation / testing
     pass
+
+xTrain, yTrain, xVal, yVal = loadSets()
 
 userInput = ""
 while userInput not in ["1", "2"]:
@@ -25,6 +27,6 @@ while userInput not in ["1", "2"]:
     userInput = input(":")
 
 if userInput == "1":
-    trainModel_nextFrame.trainModel(xTrain, xVal)
+    nextFrameModel.trainModel(xTrain, xVal)
 if userInput == "1":
-    trainModel_horizontalFrame.trainModel(xTrain, yTrain, xVal, yVal)
+    horizontalFrameModel.trainModel(xTrain, yTrain, xVal, yVal)
