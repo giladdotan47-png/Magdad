@@ -18,31 +18,37 @@ class bottleDataset(Dataset):
     _df = None
     _infoSize = 7
     _tensDf = {}
+
     def __init__(self, data_path):
         self._filename = data_path
+
         # opening the file
-        # , header=None, nrows=1)
         self._df = pd.read_csv(data_path).to_numpy()
-        print(type(self._df), type(self._df[0]), type(self._df[0]))
+
+        # replacing the empy cells
         self._df[pd.isna(self._df)] = -1
-        print(f"df = {self._df}\nshape = {self._df.shape}, {type(self._df)}")
+
     def __len__(self):
         return self._df.shape[0]
 
     def _splitVidToTensor(self, vidIdx : int) -> None:
+        """
+        this function transforms how the videos are saved in the csv into
+        trainable tensors
+        """
+
         vid = self._df[vidIdx]
         # removing the video's name
         vid = vid[1:].astype(float)
-        #print(f"vid = {vid}")
 
+        # creating the the tensor in the rite shape
         vidTensor = torch.zeros((int(len(vid) / self._infoSize), 1, self._infoSize))
         for frameNum in range(int(len(vid) / self._infoSize)):
+            # loading the data
             for argIdx in range(self._infoSize):
                 vidTensor[frameNum][0][argIdx] = int(vid[frameNum * self._infoSize + argIdx])
 
-        #print(f"added {vidTensor[:5][:3]}")
-
-        # replacing the video with a tensor
+        # adding the tensor to the saved tensors
         self._tensDf[vidIdx] = vidTensor
 
     def getRandVid(self):

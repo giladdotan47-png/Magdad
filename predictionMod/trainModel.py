@@ -4,19 +4,29 @@ from rnnModel import *
 import matplotlib.pyplot as plt
 
 
-def test_train(line_tensor):
+def train(inputs, label):
+    inputs = inputs / 2000
+    label = label / 2000
     # 1. Save a copy of a weight tensor before stepping
     before = next(model.parameters()).clone()
 
-    optimizer.zero_grad()
     hidden = model.init_hidden()
 
-    targets = line_tensor[1]
-    output, hidden = model(line_tensor[0], hidden)
-    output = torch.nan_to_num(output, nan=-1.0)
+    output, hidden = model(inputs, hidden)
+    print(label)
+    print(inputs)
+    print(output)
+    input(":")
 
-    loss = criterion(output, targets)
+    loss = criterion(output, label)
+    optimizer.zero_grad()
+    print(loss)
     loss.backward()
+
+    for name, param in model.named_parameters():
+        print(name, param.requires_grad, param.grad is not None,
+              param.grad.abs().mean() if param.grad is not None else None)
+        print("-----------------------------------------------")
 
     # 2. Check if gradients exist and are non-zero
     for name, param in model.named_parameters():
@@ -56,9 +66,18 @@ def true_train(line_tensor):
 current_loss = 0
 all_losses = []
 for i in range(N_ITERS):
-    vid = trainDat.getRandVid()
+    #vid = trainDat.getRandVid()
     vid = trainDat[i % len(trainDat)]
-    loss = train(vid)
+    #loss = train(vid)
+
+    if torch.cuda.is_available():
+        inputs = Variable(vid[0].cuda())
+        target = Variable(vid[1].cuda())
+    else:
+        inputs = Variable(vid[0])
+        target = Variable(vid[1])
+
+    loss = train(inputs, target)
 
     all_losses.append(loss)
 
