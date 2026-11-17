@@ -1,7 +1,6 @@
 from constants import *
 import torch
 import torch.nn as nn
-from torch.autograd import Variable
 
 class RNN(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
@@ -13,14 +12,13 @@ class RNN(nn.Module):
 
     def forward(self, input_tensor, hidden_tensor):
         combined = torch.cat((input_tensor, hidden_tensor), 1)
-
-        hidden = self.i2h(combined)
+        hidden = torch.tanh(self.i2h(combined))  # Prevents exploding values
         output = self.i2o(combined)
         return output, hidden
 
-
     def init_hidden(self):
-        return torch.zeros(1, self.hidden_size)
+        device = next(self.parameters()).device
+        return torch.zeros(1, self.hidden_size, device=device)
 
 
 # generating the model
@@ -33,7 +31,5 @@ if torch.cuda.is_available():
 # deciding on the loss
 criterion = nn.MSELoss()
 
-optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
-
-#for param in model.parameters():
-#    param.requires_grad =True
+#optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
+optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)

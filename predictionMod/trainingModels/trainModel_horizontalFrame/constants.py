@@ -1,0 +1,14 @@
+RANDOM_STATE = 42
+
+# model constants
+INPUT_DIM = 7
+HIDDEN_DIM = 100
+LAYER_DIM = 2
+OUTPUT_DIM = 7
+
+# training constants
+LEARNING_RATE = 0.0000001
+
+BATCH_SIZE = 100
+N_ITERS = 500
+PRINT_STEPS = 100

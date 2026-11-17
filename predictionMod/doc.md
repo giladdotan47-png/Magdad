@@ -1,4 +1,16 @@
-data saving convention:
+<h1>order of operation:</h1>
+the user only runs "trainingControler.py"\
+we first check whether we have new labeled data, if we do, then we add\
+the new data to the already existing labeled data.\
+
+after this, the user chooses the model he wishes to run
+
+<br>
+<br>
+
+<h1>data saving convention:</h1>
+<h2>training data</h2>
+
 we are going to save the data in ".csv" file\
 each type of data is saved into one file, the names are in "constants.py"\
 each line of the csv correspond 
@@ -36,3 +48,14 @@ for example: if we are saving the input data from vid number "002" in line 3,
 then the labels from that video should also be in line 3 in the labels file
 2. the input data from the frames should not pass the frame the label if from.
 for example, if we aim for frame number 20, we should add the inputs from frames 1~19
+<br>
+<br>
+<br>
+
+<h2>labels - height and time</h2>
+for this, we are going to create a ".csv" file with the following conventions:\
+each row correspond to each video.\
+each row will contain data in the following order:
+1. the video's name
+2. the height in the video (normilized to be in the range 0~1)
+3. the frame number the target frame accrued

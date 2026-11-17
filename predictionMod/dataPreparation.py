@@ -66,6 +66,11 @@ class bottleDataset(Dataset):
 
 
 # creating pytorch's dataloaders
-trainDat = bottleDataset(TRAINING_FILENAME)
-#valDat = bottleDataset(VALIDATION_FILENAME)
-#testDat = bottleDataset(TEST_FILENAME)
+xTrain = bottleDataset(TRAINING_DATA_FILENAME)
+yTrain = bottleDataset(TRAINING_LABELS_FILENAME)
+
+xVal = bottleDataset(VALIDATION_DATA_FILENAME)
+yVal = bottleDataset(VALIDATION_LABELS_FILENAME)
+
+xTest = bottleDataset(TEST_DATA_FILENAME)
+yTest = bottleDataset(TEST_LABELS_FILENAME)

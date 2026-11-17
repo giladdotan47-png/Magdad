@@ -1,22 +1,14 @@
+RANDOM_STATE = 42
+
 # data constants
 TRAIN_SIZE = 0.7
 VAL_SIZE = 0.15
 TEST_SIZE = 0.15
-RANDOM_STATE = 42
-TRAINING_FILENAME = "trainingData"
-TRAINING_FILENAME = f"C:/Users/TLP/Desktop/magdad/predictionMod/Labled_Data.csv"
-VALIDATION_FILENAME = "validationData"
-TEST_FILENAME = "testData"
+TRAINING_DATA_FILENAME = f"Training_Data.csv"
+TRAINING_LABELS_FILENAME = f"Training_Labels.csv"
 
-# model constants
-INPUT_DIM = 7
-HIDDEN_DIM = 100
-LAYER_DIM = 2
-OUTPUT_DIM = 7
+VALIDATION_DATA_FILENAME = "Validation_Data.csv"
+VALIDATION_LABELS_FILENAME = "Validation_Labels.csv"
 
-# training constants
-LEARNING_RATE = 0.001
-
-BATCH_SIZE = 100
-N_ITERS = 500
-PRINT_STEPS = 100
+TEST_DATA_FILENAME = "Test_Data.csv"
+TEST_LABELS_FILENAME = "Test_Labels.csv"

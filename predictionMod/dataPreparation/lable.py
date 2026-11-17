@@ -1,11 +1,11 @@
 import sys
-sys.path.append(r"C:\Users\TLP\Desktop\magdad")   # התיקייה שמכילה את bottle_detection_api
+sys.path.append(r"/")   # התיקייה שמכילה את bottle_detection_api
 from bottle_detection_api.bottle_detection import *
 import csv
 from pathlib import Path
 import cv2
 
-VIDEOS_DIR = Path(r"C:\Users\TLP\Desktop\magdad\predictionMod\seperated")
+VIDEOS_DIR = Path(r"/predictionMod/seperated")
 OUTPUT_CSV = "Labled_Data.csv"
 
 FRAME_RATE = 120  # TODO: set manually
