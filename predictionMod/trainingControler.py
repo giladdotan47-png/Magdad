@@ -4,7 +4,7 @@ from trainingModels import nextFrameModel
 from predictionMod.dataPreparation.dataPreparation import splitNewData, loadSets
 
 # first, we check if we have new data parsed:
-userInput = ""
+userInput = "n"
 while userInput not in ["y", "n"]:
     print("do we have new video to process\n(the video must be in the \"preprocessed\" folder)")
     userInput = input("(y/n):")
@@ -17,7 +17,7 @@ if userInput == "y":
     # split into training / validation / testing
     pass
 
-xTrain, yTrain, xVal, yVal = loadSets()
+trainDataset, validationDataset, testDataset = loadSets()
 
 userInput = ""
 while userInput not in ["1", "2"]:
@@ -27,6 +27,6 @@ while userInput not in ["1", "2"]:
     userInput = input(":")
 
 if userInput == "1":
-    nextFrameModel.trainModel(xTrain, xVal)
-if userInput == "1":
-    horizontalFrameModel.trainModel(xTrain, yTrain, xVal, yVal)
+    nextFrameModel.trainModel(trainDataset, validationDataset)
+if userInput == "2":
+    horizontalFrameModel.trainModel(trainDataset, validationDataset)

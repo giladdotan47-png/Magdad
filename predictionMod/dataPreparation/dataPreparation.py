@@ -1,11 +1,14 @@
 import random
 from .constants import *
 from sklearn.model_selection import train_test_split
-import pandas as pd
 import torch
 from torch.utils.data import Dataset
+import glob
+import pandas as pd
+import numpy as np
+import os
 
-def splitNewData() -> None:
+def splitSingleFile(training_data_path=None, labels_data_path=None) -> None:
     if training_data_path is not None:
         trainingData = pd.read_csv(training_data_path).to_numpy()
         newXTrain, newValTestTrain = train_test_split(trainingData, test_size=(VAL_SIZE + TEST_SIZE), random_state=RANDOM_STATE)
@@ -23,54 +26,103 @@ def splitNewData() -> None:
 
         # add save to files
 
+def splitNewData() -> None:
+
+
+    # specifying the path to csv files
+    path = "newData"
+
+    # csv files in the path
+    dataFiles = glob.glob(NEW_DATA_PATH + "/*.csv")
+    labelsFiles = glob.glob(NEW_LABELS_PATH + "/*.csv")
+
+    for filename in dataFiles:
+        # reading content of csv file
+        # content.append(filename)
+        print(filename)
+
+
 # creating pytorch's datasets
 class bottleDataset(Dataset):
     _filename = None
-    _df = None
-    _infoSize = 7
-    _tensDf = {}
+    _xdf = None
+    _ydf = None
+    _dataInputSize = None
+    _labelsInputSize = None
+    _xTensors = {}
+    _yTensors = {}
+    _name = ""
 
-    def __init__(self, data_path):
+    def __init__(self, data_path, labels_path, dataInputSize, labelsInputSize):
         self._filename = data_path
 
+        self._dataInputSize = dataInputSize
+        self._labelsInputSize = labelsInputSize
+
         # opening the file
-        self._df = pd.read_csv(data_path).to_numpy()
+        self._xdf = pd.read_csv(data_path, header=None).to_numpy()
+        self._ydf = pd.read_csv(labels_path, header=None).to_numpy()
+        print(f"loading from \"{data_path}\"")
+        print(f"loading from \"{labels_path}\"")
 
         # replacing the empy cells
-        self._df[pd.isna(self._df)] = -1
+        # self._df[pd.isna(self._df)] = -1
+
+        self._transformAllVidsToTensor()
+
+    def _transformAllVidsToTensor(self):
+        counter = 0
+        for vidIdx in range(len(self._xdf)):
+            suc = self._splitVidToTensor(vidIdx, counter)
+            if suc: counter += 1
+
+        print(f"total vids after selection: {len(self._xTensors.values())}")
+        print(f"total vids after selection: {len(self._yTensors.values())}")
 
     def __len__(self):
-        return self._df.shape[0]
+        return len(self._xTensors.items())
 
-    def _splitVidToTensor(self, vidIdx : int) -> None:
+    def _splitVidToTensor(self, vidIdx : int, dsidx) -> bool:
         """
         this function transforms how the videos are saved in the csv into
         trainable tensors
         """
 
-        vid = self._df[vidIdx]
+        vid = self._xdf[vidIdx]
+        # print(f"adding video {vid[0]} with {self._ydf[vidIdx][0]}")
         # removing the video's name
         vid = vid[1:].astype(float)
 
-        # creating the the tensor in the rite shape
-        vidTensor = torch.zeros((int(len(vid) / self._infoSize), 1, self._infoSize))
-        for frameNum in range(int(len(vid) / self._infoSize)):
+        # trimming the video until the first np.nan value
+        nanIndices = list(np.argwhere(np.isnan(vid)))
+        if not (nanIndices == []):
+            vid = vid[:nanIndices[0][0]]
+
+        # creating the tensor in the rite shape
+        vidTensor = torch.zeros((int(len(vid) / self._dataInputSize), 1, self._dataInputSize))
+        for frameNum in range(int(len(vid) / self._dataInputSize)):
             # loading the data
-            for argIdx in range(self._infoSize):
-                vidTensor[frameNum][0][argIdx] = int(vid[frameNum * self._infoSize + argIdx])
+            for argIdx in range(self._dataInputSize):
+                vidTensor[frameNum][0][argIdx] = float(vid[frameNum * self._dataInputSize + argIdx])
+
+        labelTensor = torch.zeros((1, self._labelsInputSize))
+        for i in range(self._labelsInputSize):
+            labelTensor[0][i] = self._ydf[vidIdx][i+1]
 
         # adding the tensor to the saved tensors
-        self._tensDf[vidIdx] = vidTensor
+        if vidTensor.shape[0] != 0:
+            self._xTensors[dsidx] = vidTensor
+            self._yTensors[dsidx] = labelTensor
+            return True
+        return False
 
-    def getRandVid(self):
-        idx = random.randint(0, len(self._df) - 1)
+    def getRand(self):
+        idx = random.randint(0, len(self._xTensors) - 1)
         return self.getVid(idx)
 
+
     def getVid(self, idx):
-        if not (idx in self._tensDf.items()):
-            # if we haven't converted the video to tensor, we do it now
-            self._splitVidToTensor(idx)
-        return self._tensDf[idx]
+        return self._xTensors[idx], self._yTensors[idx]
 
     def __getitem__(self, idx):
         return self.getVid(idx)
@@ -78,13 +130,13 @@ class bottleDataset(Dataset):
 
 def loadSets():
     # creating pytorch's dataloaders
-    xTrain = bottleDataset(TRAINING_DATA_FILENAME)
-    yTrain = bottleDataset(TRAINING_LABELS_FILENAME)
+    trainDataset = bottleDataset(data_path=TRAINING_DATA_FILENAME, labels_path=TRAINING_LABELS_FILENAME,
+                                 dataInputSize=7, labelsInputSize=2)
 
-    xVal = bottleDataset(VALIDATION_DATA_FILENAME)
-    yVal = bottleDataset(VALIDATION_LABELS_FILENAME)
+    validationDataset = bottleDataset(data_path=VALIDATION_DATA_FILENAME, labels_path=VALIDATION_LABELS_FILENAME,
+                                 dataInputSize=7, labelsInputSize=2)
 
-    xTest = bottleDataset(TEST_DATA_FILENAME)
-    yTest = bottleDataset(TEST_LABELS_FILENAME)
+    testDataset = bottleDataset(data_path=TEST_DATA_FILENAME, labels_path=TEST_LABELS_FILENAME,
+                                      dataInputSize=7, labelsInputSize=2)
 
-    return xTrain, yTrain, xVal, yVal
+    return trainDataset, validationDataset, testDataset
