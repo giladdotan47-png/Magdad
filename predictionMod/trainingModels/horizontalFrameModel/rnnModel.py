@@ -8,12 +8,20 @@ class RNN(nn.Module):
 
         self.hidden_size = hidden_size
         self.i2h = nn.Linear(input_size + hidden_size, hidden_size)
+        self.i2hSig = nn.Sigmoid()
+        self.i2h1 = nn.Linear(hidden_size, hidden_size)
+
         self.i2o = nn.Linear(input_size + hidden_size, output_size)
 
     def forward(self, input_tensor, hidden_tensor):
         combined = torch.cat((input_tensor, hidden_tensor), 1)
-        hidden = torch.tanh(self.i2h(combined))  # Prevents exploding values
+        #hidden = torch.tanh(self.i2h(combined))  # Prevents exploding values
+        hidden = self.i2h(combined)
+        hidden = self.i2hSig(hidden)
+        hidden = self.i2h1(hidden)
+
         output = self.i2o(combined)
+
         return output, hidden
 
     def init_hidden(self):
@@ -31,7 +39,7 @@ if torch.cuda.is_available():
 # deciding on the loss
 criterion = nn.MSELoss()
 
-#optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
+#optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.01)
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
 #for param in model.parameters():

@@ -11,15 +11,10 @@ while userInput not in ["y", "n"]:
 
 if userInput == "y":
     splitNewData()
-    # separate the data
-    # label the data
-    # add to one csv file
-    # split into training / validation / testing
-    pass
 
 trainDataset, validationDataset, testDataset = loadSets()
 
-userInput = ""
+userInput = "2"
 while userInput not in ["1", "2"]:
     print("which model do you want to train?")
     print("1. predict the next frame")

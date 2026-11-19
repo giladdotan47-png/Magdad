@@ -1,6 +1,6 @@
 <h1>camera's setup</h1>
-the tripod should be set 90cm from base of the architecture to the side.\
-it should be noted that the bottle will hit in the middle of th earchitecture, which 120cm from the camera.\
+the tripod should be set 90cm from base of the architecture to the side.\ 
+it should be noted that the bottle will hit in the middle of th architecture, which 120cm from the camera.\
 while setting the camera, it is important that the camera is in the right angle such that it catches all bottle's trajectory
 
 <h1>order of operation:</h1>
@@ -37,6 +37,8 @@ then, we are going to repeat the data from each frame in the following manner:
 5. (int) y value of the bottle
 6. (int) z value of the bottle
 7. (int) duration (1/framerate)
+
+at the end of each line, we will end a 2 to mark the end of the video
 
 if a video has an angle from only one camera, then we can only detect the movement\
 through the xz plane, so we will assume that y=0 and put that in the input .csv file.

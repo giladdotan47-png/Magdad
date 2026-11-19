@@ -8,23 +8,56 @@ import pandas as pd
 import numpy as np
 import os
 
-def splitSingleFile(training_data_path=None, labels_data_path=None) -> None:
-    if training_data_path is not None:
-        trainingData = pd.read_csv(training_data_path).to_numpy()
-        newXTrain, newValTestTrain = train_test_split(trainingData, test_size=(VAL_SIZE + TEST_SIZE), random_state=RANDOM_STATE)
-        newValTrain, newTestTrain = train_test_split(newValTestTrain, test_size=TEST_SIZE / (VAL_SIZE + TEST_SIZE), random_state=RANDOM_STATE)
+def splitSingleFile(training_data_path, labels_data_path) -> None:
+    # loading data
+    with open(training_data_path, "r") as file:
+        newDataLines = file.readlines()
 
-        # add save to files
-        xTrainFile = pd.read_csv(TRAINING_DATA_FILENAME, header = None)
-        xTrainFile = xTrainFile.append(pd.DataFrame(newXTrain, columns=xTrainFile.columns), ignore_index=True)
-        xTrainFile.to_csv(TRAINING_DATA_FILENAME, index=False)
+    # loading labels
+    with open(labels_data_path, "r") as file:
+        newLabelsLines = file.readlines()
+    if len(newDataLines) != len(newLabelsLines): raise MemoryError("data and labels don't have same number of lines")
+    n = len(newLabelsLines)
 
-    if labels_data_path is not None:
-        labelsData = pd.read_csv(training_data_path).to_numpy()
-        newXLabels, newValTestLabels = train_test_split(labelsData, test_size=(VAL_SIZE + TEST_SIZE), random_state=RANDOM_STATE)
-        newValTrain, newTestTrain = train_test_split(newValTestLabels, test_size=TEST_SIZE / (VAL_SIZE + TEST_SIZE), random_state=RANDOM_STATE)
+    # calculating how much lines each dataset will get
+    trainingLines = int(TRAIN_SIZE * n)
+    validationLines = int(VAL_SIZE * n)
 
-        # add save to files
+    # adding the new training data
+    with open(TRAINING_DATA_FILENAME, "r+") as file:
+        oldTrainingData = file.readlines()
+        oldTrainingData.extend(newDataLines[:trainingLines])
+        file.writelines(oldTrainingData)
+
+    # adding the new training labels
+    with open(TRAINING_LABELS_FILENAME, "r+") as file:
+        oldTrainLabels = file.readlines()
+        oldTrainLabels.extend(newLabelsLines[:trainingLines])
+        file.writelines(oldTrainLabels)
+
+    # adding the new validation data
+    with open(VALIDATION_DATA_FILENAME, "r+") as file:
+        oldValData = file.readlines()
+        oldValData.extend(newDataLines[trainingLines:trainingLines+validationLines])
+        file.writelines(oldValData)
+
+    # adding the new validation labels
+    with open(VALIDATION_LABELS_FILENAME, "r+") as file:
+        oldValLabels = file.readlines()
+        oldValLabels.extend(newLabelsLines[trainingLines:trainingLines+validationLines])
+        file.writelines(oldValLabels)
+
+    # adding the new test data
+    with open(TEST_DATA_FILENAME, "r+") as file:
+        oldTestData = file.readlines()
+        oldTestData.extend(newDataLines[trainingLines+validationLines:])
+        file.writelines(oldTestData)
+
+    # adding the new test labels
+    with open(TEST_LABELS_FILENAME, "r+") as file:
+        oldTestLabels = file.readlines()
+        oldTestLabels.extend(newLabelsLines[trainingLines+validationLines:])
+        file.writelines(oldTestLabels)
 
 def splitNewData() -> None:
 
@@ -33,13 +66,14 @@ def splitNewData() -> None:
     path = "newData"
 
     # csv files in the path
+    print(f'opening {NEW_DATA_PATH + "/*.csv"}')
     dataFiles = glob.glob(NEW_DATA_PATH + "/*.csv")
     labelsFiles = glob.glob(NEW_LABELS_PATH + "/*.csv")
 
-    for filename in dataFiles:
+    for dataFilename, labelsFilename in zip(dataFiles, labelsFiles):
         # reading content of csv file
         # content.append(filename)
-        print(filename)
+        splitSingleFile(training_data_path=dataFilename, labels_data_path=labelsFilename)
 
 
 # creating pytorch's datasets
@@ -59,62 +93,46 @@ class bottleDataset(Dataset):
         self._dataInputSize = dataInputSize
         self._labelsInputSize = labelsInputSize
 
-        # opening the file
-        self._xdf = pd.read_csv(data_path, header=None).to_numpy()
-        self._ydf = pd.read_csv(labels_path, header=None).to_numpy()
+        # opening the data and the labels
         print(f"loading from \"{data_path}\"")
         print(f"loading from \"{labels_path}\"")
+        self._loadDatasetToTensors(data_path, labels_path)
 
-        # replacing the empy cells
-        # self._df[pd.isna(self._df)] = -1
+        print(len(self._xTensors.keys()), len(self._yTensors.keys()))
 
-        self._transformAllVidsToTensor()
+    def _loadDatasetToTensors(self, data_path, labels_path):
+        with open(data_path, "r") as file:
+            dataLines = file.readlines()
+        with open(labels_path, "r") as file:
+            labelsLines = file.readlines()
 
-    def _transformAllVidsToTensor(self):
         counter = 0
-        for vidIdx in range(len(self._xdf)):
-            suc = self._splitVidToTensor(vidIdx, counter)
-            if suc: counter += 1
+        for data, label in zip(dataLines, labelsLines):
+            data = data.split(",")
+            label = label.split(",")
+            # removing the name and the seperator "2"
+            data = data[1:-1]
+            label = label[1:]
 
-        print(f"total vids after selection: {len(self._xTensors.values())}")
-        print(f"total vids after selection: {len(self._yTensors.values())}")
+            # creating the tensor in the rite shape
+            vidTensor = torch.zeros((int(len(data) / self._dataInputSize), 1, self._dataInputSize))
+            for frameNum in range(int(len(data) / self._dataInputSize)):
+                # loading the data
+                for argIdx in range(self._dataInputSize):
+                    vidTensor[frameNum][0][argIdx] = float(data[frameNum * self._dataInputSize + argIdx])
+
+            labelTensor = torch.zeros((1, self._labelsInputSize))
+            for argIdx in range(self._labelsInputSize):
+                labelTensor[0][argIdx] = float(label[argIdx])
+
+            if vidTensor.size(0) > 60:
+                self._yTensors[counter] = labelTensor
+                self._xTensors[counter] = vidTensor
+                counter += 1
+
 
     def __len__(self):
         return len(self._xTensors.items())
-
-    def _splitVidToTensor(self, vidIdx : int, dsidx) -> bool:
-        """
-        this function transforms how the videos are saved in the csv into
-        trainable tensors
-        """
-
-        vid = self._xdf[vidIdx]
-        # print(f"adding video {vid[0]} with {self._ydf[vidIdx][0]}")
-        # removing the video's name
-        vid = vid[1:].astype(float)
-
-        # trimming the video until the first np.nan value
-        nanIndices = list(np.argwhere(np.isnan(vid)))
-        if not (nanIndices == []):
-            vid = vid[:nanIndices[0][0]]
-
-        # creating the tensor in the rite shape
-        vidTensor = torch.zeros((int(len(vid) / self._dataInputSize), 1, self._dataInputSize))
-        for frameNum in range(int(len(vid) / self._dataInputSize)):
-            # loading the data
-            for argIdx in range(self._dataInputSize):
-                vidTensor[frameNum][0][argIdx] = float(vid[frameNum * self._dataInputSize + argIdx])
-
-        labelTensor = torch.zeros((1, self._labelsInputSize))
-        for i in range(self._labelsInputSize):
-            labelTensor[0][i] = self._ydf[vidIdx][i+1]
-
-        # adding the tensor to the saved tensors
-        if vidTensor.shape[0] != 0:
-            self._xTensors[dsidx] = vidTensor
-            self._yTensors[dsidx] = labelTensor
-            return True
-        return False
 
     def getRand(self):
         idx = random.randint(0, len(self._xTensors) - 1)
