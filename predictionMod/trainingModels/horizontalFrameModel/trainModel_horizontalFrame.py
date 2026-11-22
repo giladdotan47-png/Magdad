@@ -12,25 +12,50 @@ def singleStep(xTrain, yTrain):
     # stacking the
     preStacked = []
     for i in range(xTrain.size(0)):
-        preStacked.append(yTrain[0]+i)
+        preStacked.append(yTrain[0]*i)
 
     tOutputs = torch.stack(tuple(preStacked))
     pOutputs = []
 
     for i in range(xTrain.size(0)):
         output, hidden = model(xTrain[i], hidden)
-        pOutputs.append(output[0]+i)
+        pOutputs.append(output[0]*i)
 
     pOutputs = torch.stack(pOutputs)
-    loss = criterion(pOutputs[40:], tOutputs[40:])
+    pOutputs = pOutputs[40:]
+    tOutputs = tOutputs[40:]
+    #print(pOutputs.size(), tOutputs.size())
+    loss = criterion(pOutputs, tOutputs)
 
     loss.backward()
 
     return loss.item() / (xTrain.size(0) - 40)
 
+def evalAtVal(validationDataset):
+    lss = 0
+    for i in range(len(validationDataset)):
+        hidden = model.init_hidden()
+        x, y = validationDataset[i]
+        # stacking the
+        preStacked = []
+        for i in range(x.size(0)):
+            preStacked.append(y[0] * i)
+
+        tOutputs = torch.stack(tuple(preStacked))
+        pOutputs = []
+
+        for i in range(x.size(0)):
+            output, hidden = model(x[i], hidden)
+            pOutputs.append(output[0] * i)
+
+        pOutputs = torch.stack(pOutputs)
+        lss += criterion(pOutputs[40:], tOutputs[40:]).item() / (x.size(0) - 40)
+
+    return lss
 
 def trainModel(trainDataset, validationDataset):
     all_losses = []
+    all_val_losses = []
     epoch_loss = 0
 
 
@@ -58,12 +83,22 @@ def trainModel(trainDataset, validationDataset):
             # saving the average of the losses
             avg_loss = epoch_loss / PRINT_STEPS
             all_losses.append(avg_loss)
-            print(f"Epoch {(iter + 1) // PRINT_STEPS}/{N_ITERS//PRINT_STEPS}, Avg Loss: {avg_loss:.6f}")
+            print(f"iter {(iter + 1) // PRINT_STEPS}/{N_ITERS//PRINT_STEPS}, Avg Loss: {avg_loss:.6f}")
             epoch_loss = 0
+            valLos = evalAtVal(validationDataset)
+            all_val_losses.append(valLos)
+            print(f"validation loss = {valLos}")
 
     print(all_losses)
-    plt.figure()
-    plt.xlabel("epochs")
-    plt.ylabel("loss")
-    plt.plot(all_losses)
+    print(all_val_losses)
+    x = list(range(len(all_losses)))
+    plt.plot(x, all_losses, color='r', label="trainingLosses")
+    plt.plot(x, all_val_losses, color='b', label="validationLosses")
+    plt.legend()
     plt.show()
+    torch.save(model.state_dict(), "model_weights.pt")
+    #plt.figure()
+    #plt.xlabel("epochs")
+    #plt.ylabel("loss")
+    #plt.plot(all_losses)
+    #plt.show()

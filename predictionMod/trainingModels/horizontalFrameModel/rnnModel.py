@@ -7,11 +7,18 @@ class RNN(nn.Module):
         super(RNN, self).__init__()
 
         self.hidden_size = hidden_size
+
         self.i2h = nn.Linear(input_size + hidden_size, hidden_size)
         self.i2hSig = nn.Sigmoid()
         self.i2h1 = nn.Linear(hidden_size, hidden_size)
+        self.i2hSig1 = nn.Sigmoid()
+        self.i2h2 = nn.Linear(hidden_size, hidden_size)
+        self.i2hSig2 = nn.Sigmoid()
+        self.i2h3 = nn.Linear(hidden_size, hidden_size)
 
-        self.i2o = nn.Linear(input_size + hidden_size, output_size)
+        self.i2o = nn.Linear(input_size + hidden_size, hidden_size)
+        self.i2oSig = nn.Sigmoid()
+        self.i2o1 = nn.Linear(hidden_size, output_size)
 
     def forward(self, input_tensor, hidden_tensor):
         combined = torch.cat((input_tensor, hidden_tensor), 1)
@@ -19,8 +26,14 @@ class RNN(nn.Module):
         hidden = self.i2h(combined)
         hidden = self.i2hSig(hidden)
         hidden = self.i2h1(hidden)
+        hidden = self.i2hSig1(hidden)
+        hidden = self.i2h2(hidden)
+        hidden = self.i2hSig2(hidden)
+        hidden = self.i2h3(hidden)
 
         output = self.i2o(combined)
+        output = self.i2oSig(output)
+        output = self.i2o1(output)
 
         return output, hidden
 
