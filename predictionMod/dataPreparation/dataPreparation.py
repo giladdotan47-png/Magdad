@@ -1,12 +1,8 @@
 import random
 from .constants import *
-from sklearn.model_selection import train_test_split
 import torch
 from torch.utils.data import Dataset
 import glob
-import pandas as pd
-import numpy as np
-import os
 
 def splitSingleFile(training_data_path, labels_data_path) -> None:
     # loading data
@@ -78,16 +74,16 @@ def splitNewData() -> None:
 
 # creating pytorch's datasets
 class bottleDataset(Dataset):
-    _filename = None
-    _xdf = None
-    _ydf = None
-    _dataInputSize = None
-    _labelsInputSize = None
-    _xTensors = {}
-    _yTensors = {}
-    _name = ""
-
     def __init__(self, data_path, labels_path, dataInputSize, labelsInputSize):
+        self._filename = None
+        self._xdf = None
+        self._ydf = None
+        self._dataInputSize = None
+        self._labelsInputSize = None
+        self._xTensors = {}
+        self._yTensors = {}
+        self._name = ""
+
         self._filename = data_path
 
         self._dataInputSize = dataInputSize
@@ -111,7 +107,11 @@ class bottleDataset(Dataset):
             data = data.split(",")
             label = label.split(",")
             # removing the name and the seperator "2"
-            data = data[1:-1]
+            #print(data)
+            try:
+                data = data[1:data.index("2")]
+            except:
+                data = data[1:data.index("2\n")]
             label = label[1:]
 
             # creating the tensor in the rite shape
