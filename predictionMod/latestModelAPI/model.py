@@ -1,6 +1,7 @@
 from predictionMod.trainingModels.horizontalFrameModel.model1.constants import *
 import torch
 import torch.nn as nn
+import os
 
 class RNN(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
@@ -59,3 +60,8 @@ model = RNN(INPUT_DIM, HIDDEN_DIM, OUTPUT_DIM)
 # checking whether we have a GPU available
 #if torch.cuda.is_available():
 #    model.cuda()
+
+basedir = os.path.dirname(__file__)
+basedir = os.path.join(basedir, "model_weights_final.pt")
+
+model.load_state_dict(torch.load(basedir, weights_only=True))
