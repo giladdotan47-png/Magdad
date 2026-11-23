@@ -1,1 +1,1 @@
-from .trainModel_horizontalFrame import trainModel
+from .trainingControler import trainModelCont

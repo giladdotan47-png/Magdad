@@ -1,9 +1,7 @@
-from .rnnModel import model, optimizer, criterion
 import torch
-from .constants import N_ITERS, BATCH_SIZE, PRINT_STEPS
 import matplotlib.pyplot as plt
 
-def singleStep(xTrain, yTrain):
+def singleStep(xTrain, yTrain, model, optimizer, criterion):
     # initializing the model for the step
     hidden = model.init_hidden()
 
@@ -29,7 +27,7 @@ def singleStep(xTrain, yTrain):
 
     return loss.item() / (xTrain.size(0) - 40)
 
-def evalAtVal(validationDataset):
+def evalAtVal(validationDataset, model, optimizer, criterion):
     lss = 0
     for i in range(len(validationDataset)):
         hidden = model.init_hidden()
@@ -56,7 +54,7 @@ def evalAtVal(validationDataset):
 
     return lss
 
-def trainModel(trainDataset, validationDataset):
+def trainModel(trainDataset, validationDataset, model, optimizer, criterion, N_ITERS, BATCH_SIZE, PRINT_STEPS):
     all_losses = []
     all_val_losses = []
     epoch_loss = 0
@@ -73,7 +71,7 @@ def trainModel(trainDataset, validationDataset):
         if (iter + 1) % BATCH_SIZE == 0:
             optimizer.zero_grad()
 
-        loss = singleStep(vidCuda, labelCuda)
+        loss = singleStep(vidCuda, labelCuda, model, optimizer, criterion)
 
         if (iter + 1) % BATCH_SIZE == 0:
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
@@ -88,7 +86,7 @@ def trainModel(trainDataset, validationDataset):
             all_losses.append(avg_loss)
             print(f"iter {(iter + 1) // PRINT_STEPS}/{N_ITERS//PRINT_STEPS}, Avg Loss: {avg_loss:.6f}")
             epoch_loss = 0
-            valLos = evalAtVal(validationDataset)
+            valLos = evalAtVal(validationDataset, model, optimizer, criterion)
             all_val_losses.append(valLos)
             print(f"validation loss = {valLos}")
             torch.save(model.state_dict(), f"model_weights_{(iter + 1) // PRINT_STEPS}.pt")
@@ -101,8 +99,3 @@ def trainModel(trainDataset, validationDataset):
     plt.legend()
     plt.show()
     torch.save(model.state_dict(), "model_weights.pt")
-    #plt.figure()
-    #plt.xlabel("epochs")
-    #plt.ylabel("loss")
-    #plt.plot(all_losses)
-    #plt.show()

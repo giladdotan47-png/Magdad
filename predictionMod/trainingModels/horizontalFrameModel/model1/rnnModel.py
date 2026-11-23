@@ -1,4 +1,4 @@
-from .constants import *
+from predictionMod.trainingModels.horizontalFrameModel.model1.constants import *
 import torch
 import torch.nn as nn
 
