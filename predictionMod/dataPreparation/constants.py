@@ -7,12 +7,24 @@ TRAIN_SIZE = 0.8
 VAL_SIZE = 0.15
 TEST_SIZE = 0.05
 
+DATA_PER_FRAME = 7
+
 NEW_DATA_PATH = "newData"
 NEW_LABELS_PATH = "newLabels"
 
 TRAINING_DATA_FILENAME = f"Training_Data.csv"
 VALIDATION_DATA_FILENAME = "Validation_Data.csv"
 TEST_DATA_FILENAME = "Test_Data.csv"
+
+LOAD_BOTTLE_X = True
+LOAD_BOTTLE_Y = False
+LOAD_BOTTLE_Z = True
+
+LOAD_CAP_X = True
+LOAD_CAP_Y = False
+LOAD_CAP_Z = True
+
+LOAD_DURATION = True
 
 # making the paths absolute values
 script_dir = os.path.dirname(__file__)

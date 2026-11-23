@@ -31,7 +31,7 @@ def trainModelCont(trainDataset, validationDataset, testDataset):
     userInput = ""
     while userInput not in ["1", "2", "3"]:
         print("choose from the following:")
-        print("1. train the mocel (or continue training)")
+        print("1. train the model (or continue training)")
         print("2. evaluate at validation set")
         print("3. evaluate at test set")
 

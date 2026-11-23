@@ -96,11 +96,30 @@ class bottleDataset(Dataset):
             data, label = data[2:], data[:2]
 
             # creating the tensor in the rite shape
-            vidTensor = torch.zeros((int(len(data) / self._dataInputSize), 1, self._dataInputSize))
-            for frameNum in range(int(len(data) / self._dataInputSize)):
-                # loading the data
-                for argIdx in range(self._dataInputSize):
-                    vidTensor[frameNum][0][argIdx] = float(data[frameNum * self._dataInputSize + argIdx])
+            vidTensor = torch.zeros((int(len(data) / DATA_PER_FRAME), 1, self._dataInputSize))
+            for frameNum in range(int(len(data) / DATA_PER_FRAME)):
+                # loading the data for each frame
+                frameDataIdx = 0
+                if LOAD_CAP_X:
+                    vidTensor[frameNum][0][frameDataIdx] = float(data[frameNum * DATA_PER_FRAME + 0])
+                    frameDataIdx += 1
+                if LOAD_CAP_Y:
+                    vidTensor[frameNum][0][frameDataIdx] = float(data[frameNum * DATA_PER_FRAME + 1])
+                    frameDataIdx += 1
+                if LOAD_CAP_Z:
+                    vidTensor[frameNum][0][frameDataIdx] = float(data[frameNum * DATA_PER_FRAME + 2])
+                    frameDataIdx += 1
+                if LOAD_BOTTLE_X:
+                    vidTensor[frameNum][0][frameDataIdx] = float(data[frameNum * DATA_PER_FRAME + 3])
+                    frameDataIdx += 1
+                if LOAD_BOTTLE_Y:
+                    vidTensor[frameNum][0][frameDataIdx] = float(data[frameNum * DATA_PER_FRAME + 4])
+                    frameDataIdx += 1
+                if LOAD_BOTTLE_Z:
+                    vidTensor[frameNum][0][frameDataIdx] = float(data[frameNum * DATA_PER_FRAME + 5])
+                    frameDataIdx += 1
+                if LOAD_DURATION:
+                    vidTensor[frameNum][0][frameDataIdx] = float(data[frameNum * DATA_PER_FRAME + 6])
 
             labelTensor = torch.zeros((1, self._labelsInputSize))
             for argIdx in range(self._labelsInputSize):
@@ -129,10 +148,10 @@ class bottleDataset(Dataset):
 
 def loadSets():
     # creating pytorch's dataloaders
-    trainDataset = bottleDataset(data_path=TRAINING_DATA_FILENAME, dataInputSize=7, labelsInputSize=1)
+    trainDataset = bottleDataset(data_path=TRAINING_DATA_FILENAME, dataInputSize=5, labelsInputSize=1)
 
-    validationDataset = bottleDataset(data_path=VALIDATION_DATA_FILENAME, dataInputSize=7, labelsInputSize=1)
+    validationDataset = bottleDataset(data_path=VALIDATION_DATA_FILENAME, dataInputSize=5, labelsInputSize=1)
 
-    testDataset = bottleDataset(data_path=TEST_DATA_FILENAME, dataInputSize=7, labelsInputSize=1)
+    testDataset = bottleDataset(data_path=TEST_DATA_FILENAME, dataInputSize=5, labelsInputSize=1)
 
     return trainDataset, validationDataset, testDataset

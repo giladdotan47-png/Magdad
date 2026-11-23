@@ -1,7 +1,7 @@
 RANDOM_STATE = 42
 
 # model constants
-INPUT_DIM = 7
+INPUT_DIM = 5
 HIDDEN_DIM = 300
 LAYER_DIM = 2
 OUTPUT_DIM = 1
