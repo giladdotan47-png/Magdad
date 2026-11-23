@@ -3,6 +3,11 @@ import torch
 
 hidden = None
 
+import operator
+
+def rindex(lst, value):
+    return len(lst) - operator.indexOf(reversed(lst), value) - 1
+
 def initVid():
     global hidden
     hidden = model.init_hidden()
@@ -17,14 +22,15 @@ def csvToTensors(path):
     counter = 0
     tens = {}
     zTrues = {}
+
     for data in dataLines:
         data = data.split(",")
         # removing the name and the seperator "2"
         # print(data)
         try:
-            data = data[1:data.index("2")]
+            data = data[1:rindex(data, "2")]
         except:
-            data = data[1:data.index("2\n")]
+            data = data[1:rindex(data, "2\n")]
 
         # separating the data from the labels
         data, label = data[2:], data[:2]
@@ -48,6 +54,8 @@ def csvToTensors(path):
 
     return tens, zTrues
 
-def processFrame(frame):
+def predictFrame(frame):
     global hidden
-    return model(frame, hidden)
+    output, hidden = model(frame, hidden)
+
+    return output

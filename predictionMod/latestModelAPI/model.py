@@ -1,6 +1,7 @@
 from predictionMod.trainingModels.horizontalFrameModel.model1.constants import *
 import torch
 import torch.nn as nn
+import os
 
 class RNN(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
@@ -57,14 +58,10 @@ class RNN(nn.Module):
 model = RNN(INPUT_DIM, HIDDEN_DIM, OUTPUT_DIM)
 
 # checking whether we have a GPU available
-if torch.cuda.is_available():
-    model.cuda()
+#if torch.cuda.is_available():
+#    model.cuda()
 
-# deciding on the loss
-criterion = nn.MSELoss()
+basedir = os.path.dirname(__file__)
+basedir = os.path.join(basedir, "model_weights_final.pt")
 
-#optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.01)
-optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
-
-#for param in model.parameters():
-#    param.requires_grad =True
+model.load_state_dict(torch.load(basedir, weights_only=True))
