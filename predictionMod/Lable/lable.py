@@ -9,9 +9,9 @@ Row layout (one file, the label comes right after the name):
   video_name, z_pred, frame_number, then for every frame of the attempt:
   xcap, ycap, zcap, xbottle, ybottle, zbottle, duration      (y = 0; duration = 1 / frame rate, in seconds)
 
-Normalization: x and z are min-max scaled to 0-1 separately for every row, using the min/max
-of that row's input frames (the same frames that are written to the row). z_pred is scaled
-with the same z range.
+Normalization: coordinates are scaled by the frame dimensions, using one fixed scale for every
+frame and every attempt: x / (frame_width - 1), z / (frame_height - 1). Thus the same image
+location has the same normalized value in every row. z_pred uses the exact same z scaling.
 
 Attempts where no label frame is found (or nothing usable is left before it) are dropped,
 so there is no row for them.
@@ -74,10 +74,9 @@ MIN_OFFSET_PX = 15
 #   -1   = the cap has the smaller z when upright (z grows downwards, like image rows).
 UPRIGHT_SIGN = None
 
-# Normalization scale. True  = one min/max per axis, shared by cap and bottle (x: xcap+xbottle,
-#                              z: zcap+zbottle), which keeps the cap-vs-bottle geometry intact.
-#                    False = a separate min/max for each of the 4 columns.
-SHARED_AXIS_SCALE = True
+# Coordinates are normalized relative to the frame dimensions:
+# x_norm = x / (frame_width - 1), z_norm = z / (frame_height - 1).
+# This gives every frame and every attempt the same coordinate scale.
 
 # One cell written after the last frame of every data row, so the reader knows where to cut the row.
 END_MARKER = 2
@@ -314,37 +313,28 @@ def find_attempts(valid, bottle):
 
 
 # ---------------- build a CSV row for one attempt ----------------
-def input_ranges(valid, bottle, capc, s, k):
-    """
-    (min, max) for x and z of the cap and the bottle, over the visible input frames s .. k-1 only
-    (the frames written to the row, so nothing from the label frame or later leaks into the scale).
-    Returns None if there is no usable frame.
-    """
-    idx = [i for i in range(s, k) if valid[i]]
-    if not idx:
-        return None
-    cap_v, bot_v = capc[idx], bottle[idx]            # columns: 0 = x, 1 = z
-    ranges = {}
-    for ax, axis in ((0, "x"), (1, "z")):
-        if SHARED_AXIS_SCALE:
-            both = np.concatenate([cap_v[:, ax], bot_v[:, ax]])
-            ranges[("cap", axis)] = ranges[("bottle", axis)] = (np.nanmin(both), np.nanmax(both))
-        else:
-            ranges[("cap", axis)] = (np.nanmin(cap_v[:, ax]), np.nanmax(cap_v[:, ax]))
-            ranges[("bottle", axis)] = (np.nanmin(bot_v[:, ax]), np.nanmax(bot_v[:, ax]))
-    if any(np.isnan(lo) or np.isnan(hi) for lo, hi in ranges.values()):
-        return None
-    return ranges
-
-
-def norm(v, rng):
-    """Min-max scale to 0-1. Undetected values become -1; a constant axis (max == min) gives 0."""
-    lo, hi = rng
+def norm(v, axis_size):
+    """Normalize a pixel coordinate by the frame dimension; NaN (undetected) becomes -1."""
     if np.isnan(v):
         return -1
-    if hi == lo:
-        return 0.0
-    return round(float((v - lo) / (hi - lo)), 6)
+    if axis_size <= 1:
+        raise ValueError(f"Invalid frame dimension for normalization: {axis_size}")
+    return round(float(v) / (axis_size - 1), 6)
+
+
+def get_frame_dimensions(video):
+    """Return (width, height) as delivered by OpenCV for this video."""
+    cap = cv2.VideoCapture(str(video))
+    if not cap.isOpened():
+        raise RuntimeError(f"Could not open video to read its dimensions: {video}")
+    ok, frame = cap.read()
+    cap.release()
+    if not ok or frame is None:
+        raise RuntimeError(f"Could not read the first frame to get dimensions: {video}")
+    height, width = frame.shape[:2]
+    if width <= 1 or height <= 1:
+        raise RuntimeError(f"Invalid frame dimensions ({width}x{height}) in {video}")
+    return width, height
 
 
 def infer_upright_sign(valid, bottle, capc):
@@ -386,10 +376,11 @@ def find_label_frame(valid, bottle, capc, s, e, upright):
     return None
 
 
-def attempt_row(name, z_pred, frame_number, s, k, valid, bottle, capc, ranges):
+def attempt_row(name, z_pred, frame_number, s, k, valid, bottle, capc,
+                frame_width, frame_height):
     """
     One row: the name, the label (z_pred, frame_number), then the input frames s .. k-1 only
-    (never the label frame k itself or later), normalized, followed by one END_MARKER cell.
+    (never the label frame k itself or later). All coordinates use the frame-dimension scale.
     """
     row = [name, z_pred, frame_number]
     for i in range(s, k):
@@ -397,12 +388,12 @@ def attempt_row(name, z_pred, frame_number, s, k, valid, bottle, capc, ranges):
             xcap, zcap = capc[i]
             xbottle, zbottle = bottle[i]
             row.extend([
-                norm(xcap, ranges[("cap", "x")]), 0, norm(zcap, ranges[("cap", "z")]),
-                norm(xbottle, ranges[("bottle", "x")]), 0, norm(zbottle, ranges[("bottle", "z")]),
+                norm(xcap, frame_width), 0, norm(zcap, frame_height),
+                norm(xbottle, frame_width), 0, norm(zbottle, frame_height),
                 FRAME_DURATION,                                    # y = 0
             ])
         else:
-            row.extend([-1, 0, -1, -1, 0, -1, FRAME_DURATION])        # not visible: -1 in x and z, y = 0; duration stays
+            row.extend([-1, 0, -1, -1, 0, -1, FRAME_DURATION])
     row.append(END_MARKER)
     return row
 
@@ -480,6 +471,8 @@ def main():
 
     for video in videos:
         print(f"{video.name}")
+        frame_width, frame_height = get_frame_dimensions(video)
+        print(f"  frame size: {frame_width}x{frame_height}")
         found, sure, bottle, capc = detect_all(video)
         valid = (found & sure) if USE_SURE else found
         segments = find_attempts(valid, bottle)
@@ -493,18 +486,21 @@ def main():
             k = find_label_frame(valid, bottle, capc, s, e, upright)
             if n <= NUM_CLIPS_TO_SAVE:
                 save_signal_plot(video, n, s, e, k, valid, bottle, capc, upright)
-            ranges = input_ranges(valid, bottle, capc, s, k) if (k is not None and k > s) else None
-
-            if ranges is None:   # no label frame / no usable input frames -> drop the attempt
+            # Keep only attempts with a label frame and at least one usable input frame before it.
+            if k is None or k <= s or not np.any(valid[s:k]):
                 dropped_here += 1
                 continue
 
-            z_pred = norm(bottle[k][1], ranges[("bottle", "z")])   # z of the bottle at the label frame
+            # The label uses the same frame-relative scale as every input coordinate.
+            z_pred = norm(bottle[k][1], frame_height)
             if not 0 <= z_pred <= 1:
                 n_out_of_range += 1
             frame_number = k - s + 1                      # 1-based, counted from the start of the attempt
 
-            rows.append(attempt_row(name, z_pred, frame_number, s, k, valid, bottle, capc, ranges))
+            rows.append(attempt_row(
+                name, z_pred, frame_number, s, k, valid, bottle, capc,
+                frame_width, frame_height
+            ))
             segment_log.append([name, video.name, s, e, k])
         if dropped_here:
             print(f"  {dropped_here} attempts dropped (no label frame found)")
@@ -535,8 +531,8 @@ def main():
 
     print(f"\nSaved {len(rows)} rows ({n_dropped} attempts dropped) to {OUTPUT_CSV}")
     if n_out_of_range:
-        print(f"Note: {n_out_of_range} normalized z_pred values fall outside 0-1 "
-              "(the bottle at the label frame is beyond the range of the input frames).")
+        print(f"Note: {n_out_of_range} label z coordinates fall outside 0-1 "
+              "(the detected bottle center is outside the frame's vertical pixel bounds).")
 
 
 if __name__ == "__main__":
