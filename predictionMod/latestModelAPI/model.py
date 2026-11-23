@@ -57,14 +57,5 @@ class RNN(nn.Module):
 model = RNN(INPUT_DIM, HIDDEN_DIM, OUTPUT_DIM)
 
 # checking whether we have a GPU available
-if torch.cuda.is_available():
-    model.cuda()
-
-# deciding on the loss
-criterion = nn.MSELoss()
-
-#optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.01)
-optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
-
-#for param in model.parameters():
-#    param.requires_grad =True
+#if torch.cuda.is_available():
+#    model.cuda()

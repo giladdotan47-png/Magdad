@@ -50,4 +50,6 @@ def csvToTensors(path):
 
 def processFrame(frame):
     global hidden
-    return model(frame, hidden)
+    output, hidden = model(frame, hidden)
+
+    return output
