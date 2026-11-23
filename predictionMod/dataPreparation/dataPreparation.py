@@ -56,8 +56,6 @@ def splitSingleFile(training_data_path, labels_data_path) -> None:
         file.writelines(oldTestLabels)
 
 def splitNewData() -> None:
-
-
     # specifying the path to csv files
     path = "newData"
 

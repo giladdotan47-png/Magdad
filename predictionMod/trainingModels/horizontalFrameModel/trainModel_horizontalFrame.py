@@ -2,8 +2,6 @@ from .rnnModel import model, optimizer, criterion
 import torch
 from .constants import N_ITERS, BATCH_SIZE, PRINT_STEPS
 import matplotlib.pyplot as plt
-import random
-
 
 def singleStep(xTrain, yTrain):
     # initializing the model for the step
@@ -12,14 +10,14 @@ def singleStep(xTrain, yTrain):
     # stacking the
     preStacked = []
     for i in range(xTrain.size(0)):
-        preStacked.append(yTrain[0]*i)
+        preStacked.append(yTrain*i)
 
     tOutputs = torch.stack(tuple(preStacked))
     pOutputs = []
 
     for i in range(xTrain.size(0)):
         output, hidden = model(xTrain[i], hidden)
-        pOutputs.append(output[0]*i)
+        pOutputs.append(output*i)
 
     pOutputs = torch.stack(pOutputs)
     pOutputs = pOutputs[40:]
@@ -36,19 +34,24 @@ def evalAtVal(validationDataset):
     for i in range(len(validationDataset)):
         hidden = model.init_hidden()
         x, y = validationDataset[i]
+
+        x = x.cuda() if torch.cuda.is_available() else x
+        y = y.cuda() if torch.cuda.is_available() else y
+
         # stacking the
         preStacked = []
         for i in range(x.size(0)):
-            preStacked.append(y[0] * i)
+            preStacked.append(y * i)
 
         tOutputs = torch.stack(tuple(preStacked))
         pOutputs = []
 
         for i in range(x.size(0)):
             output, hidden = model(x[i], hidden)
-            pOutputs.append(output[0] * i)
+            pOutputs.append(output * i)
 
         pOutputs = torch.stack(pOutputs)
+        #print(pOutputs.size(), tOutputs.size())
         lss += criterion(pOutputs[40:], tOutputs[40:]).item() / (x.size(0) - 40)
 
     return lss
@@ -88,6 +91,7 @@ def trainModel(trainDataset, validationDataset):
             valLos = evalAtVal(validationDataset)
             all_val_losses.append(valLos)
             print(f"validation loss = {valLos}")
+            torch.save(model.state_dict(), f"model_weights_{(iter + 1) // PRINT_STEPS}.pt")
 
     print(all_losses)
     print(all_val_losses)
