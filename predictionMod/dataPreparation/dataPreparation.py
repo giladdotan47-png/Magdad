@@ -3,17 +3,17 @@ from .constants import *
 import torch
 from torch.utils.data import Dataset
 import glob
+import operator
 
-def splitSingleFile(training_data_path, labels_data_path) -> None:
+def _splitSingleFile(training_data_path) -> None:
+    """
+    this file loads a single file of data, and splits it between the training/validation/test datasets
+    """
     # loading data
     with open(training_data_path, "r") as file:
         newDataLines = file.readlines()
 
-    # loading labels
-    with open(labels_data_path, "r") as file:
-        newLabelsLines = file.readlines()
-    if len(newDataLines) != len(newLabelsLines): raise MemoryError("data and labels don't have same number of lines")
-    n = len(newLabelsLines)
+    n = len(newDataLines)
 
     # calculating how much lines each dataset will get
     trainingLines = int(TRAIN_SIZE * n)
@@ -25,23 +25,11 @@ def splitSingleFile(training_data_path, labels_data_path) -> None:
         oldTrainingData.extend(newDataLines[:trainingLines])
         file.writelines(oldTrainingData)
 
-    # adding the new training labels
-    with open(TRAINING_LABELS_FILENAME, "r+") as file:
-        oldTrainLabels = file.readlines()
-        oldTrainLabels.extend(newLabelsLines[:trainingLines])
-        file.writelines(oldTrainLabels)
-
     # adding the new validation data
     with open(VALIDATION_DATA_FILENAME, "r+") as file:
         oldValData = file.readlines()
         oldValData.extend(newDataLines[trainingLines:trainingLines+validationLines])
         file.writelines(oldValData)
-
-    # adding the new validation labels
-    with open(VALIDATION_LABELS_FILENAME, "r+") as file:
-        oldValLabels = file.readlines()
-        oldValLabels.extend(newLabelsLines[trainingLines:trainingLines+validationLines])
-        file.writelines(oldValLabels)
 
     # adding the new test data
     with open(TEST_DATA_FILENAME, "r+") as file:
@@ -49,29 +37,22 @@ def splitSingleFile(training_data_path, labels_data_path) -> None:
         oldTestData.extend(newDataLines[trainingLines+validationLines:])
         file.writelines(oldTestData)
 
-    # adding the new test labels
-    with open(TEST_LABELS_FILENAME, "r+") as file:
-        oldTestLabels = file.readlines()
-        oldTestLabels.extend(newLabelsLines[trainingLines+validationLines:])
-        file.writelines(oldTestLabels)
 
 def splitNewData() -> None:
     # specifying the path to csv files
     path = "newData"
 
-    # csv files in the path
+    # checking fo all the csv files in the path
     print(f'opening {NEW_DATA_PATH + "/*.csv"}')
     dataFiles = glob.glob(NEW_DATA_PATH + "/*.csv")
-    labelsFiles = glob.glob(NEW_LABELS_PATH + "/*.csv")
 
-    for dataFilename, labelsFilename in zip(dataFiles, labelsFiles):
-        # reading content of csv file
-        # content.append(filename)
-        splitSingleFile(training_data_path=dataFilename, labels_data_path=labelsFilename)
+    for dataFilename in dataFiles:
+        # reading content of each csv file and processing
+        _splitSingleFile(training_data_path=dataFilename)
 
 # creating pytorch's datasets
 class bottleDataset(Dataset):
-    def __init__(self, data_path, labels_path, dataInputSize, labelsInputSize):
+    def __init__(self, data_path, dataInputSize, labelsInputSize):
         self._filename = None
         self._xdf = None
         self._ydf = None
@@ -88,28 +69,31 @@ class bottleDataset(Dataset):
 
         # opening the data and the labels
         print(f"loading from \"{data_path}\"")
-        print(f"loading from \"{labels_path}\"")
-        self._loadDatasetToTensors(data_path, labels_path)
+        self._loadDatasetToTensors(data_path)
 
         print(len(self._xTensors.keys()), len(self._yTensors.keys()))
 
-    def _loadDatasetToTensors(self, data_path, labels_path):
+    def rindex(self, lst, value):
+        return len(lst) - operator.indexOf(reversed(lst), value) - 1
+
+    def _loadDatasetToTensors(self, data_path):
         with open(data_path, "r") as file:
             dataLines = file.readlines()
-        with open(labels_path, "r") as file:
-            labelsLines = file.readlines()
 
         counter = 0
-        for data, label in zip(dataLines, labelsLines):
+        a = 0
+        for data in dataLines:
             data = data.split(",")
-            label = label.split(",")
+
             # removing the name and the seperator "2"
-            #print(data)
             try:
-                data = data[1:data.index("2")]
+                data = data[1:self.rindex(data, "2\n")]
             except:
-                data = data[1:data.index("2\n")]
-            label = label[1:]
+                data = data[1:self.rindex(data, "2")]
+
+
+            # separating the data from the labels
+            data, label = data[2:], data[:2]
 
             # creating the tensor in the rite shape
             vidTensor = torch.zeros((int(len(data) / self._dataInputSize), 1, self._dataInputSize))
@@ -145,13 +129,10 @@ class bottleDataset(Dataset):
 
 def loadSets():
     # creating pytorch's dataloaders
-    trainDataset = bottleDataset(data_path=TRAINING_DATA_FILENAME, labels_path=TRAINING_LABELS_FILENAME,
-                                 dataInputSize=7, labelsInputSize=2)
+    trainDataset = bottleDataset(data_path=TRAINING_DATA_FILENAME, dataInputSize=7, labelsInputSize=1)
 
-    validationDataset = bottleDataset(data_path=VALIDATION_DATA_FILENAME, labels_path=VALIDATION_LABELS_FILENAME,
-                                 dataInputSize=7, labelsInputSize=2)
+    validationDataset = bottleDataset(data_path=VALIDATION_DATA_FILENAME, dataInputSize=7, labelsInputSize=1)
 
-    testDataset = bottleDataset(data_path=TEST_DATA_FILENAME, labels_path=TEST_LABELS_FILENAME,
-                                      dataInputSize=7, labelsInputSize=2)
+    testDataset = bottleDataset(data_path=TEST_DATA_FILENAME, dataInputSize=7, labelsInputSize=1)
 
     return trainDataset, validationDataset, testDataset

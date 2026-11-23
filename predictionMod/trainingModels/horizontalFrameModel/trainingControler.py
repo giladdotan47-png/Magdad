@@ -2,7 +2,7 @@ import torch
 from .trainModel_horizontalFrame import trainModel, evalAtVal
 
 def trainModelCont(trainDataset, validationDataset, testDataset):
-    chosenModel = ""
+    chosenModel = "1"
 
     availableModels = ["1"]
 
@@ -16,7 +16,7 @@ def trainModelCont(trainDataset, validationDataset, testDataset):
         from .model1.constants import N_ITERS, BATCH_SIZE, PRINT_STEPS
         from .model1.rnnModel import model, optimizer, criterion
 
-    userInput = ""
+    userInput = "n"
     while userInput not in ["y", "n"]:
         userInput = input("do you want to load the pretrained weights? (y/n) ")
 

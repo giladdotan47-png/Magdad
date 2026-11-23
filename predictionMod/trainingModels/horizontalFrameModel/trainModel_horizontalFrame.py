@@ -11,6 +11,9 @@ def singleStep(xTrain, yTrain, model, optimizer, criterion):
         preStacked.append(yTrain*i)
 
     tOutputs = torch.stack(tuple(preStacked))
+    print(yTrain.size())
+    print(xTrain.size())
+    print(f"shape of tOutputs = {tOutputs.size()}")
     pOutputs = []
 
     for i in range(xTrain.size(0)):

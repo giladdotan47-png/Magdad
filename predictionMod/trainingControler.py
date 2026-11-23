@@ -3,7 +3,7 @@ from trainingModels import horizontalFrameModel
 from trainingModels import nextFrameModel
 from predictionMod.dataPreparation.dataPreparation import splitNewData, loadSets
 
-# first, we check if we have new data parsed:
+# first, we check if we have new data to parse:
 userInput = "n"
 while userInput not in ["y", "n"]:
     print("do we have new video to process\n(the video must be in the \"preprocessed\" folder)")

@@ -59,3 +59,18 @@ def predictFrame(frame):
     output, hidden = model(frame, hidden)
 
     return output
+
+def predToHeight(pred):
+    """
+    this function transform the model's prediction into real-world height
+    """
+
+    z_bottom = 0.1 # CHANGE ME
+    z_top = 0.1  # CHANGE ME
+    z_rest = 0.5 # CHANGE ME
+    delta_z_cm = 40 # CHANGE ME
+    delta_z_pixel = z_top - z_bottom
+
+    H = (delta_z_cm / delta_z_pixel)
+
+    return (pred - z_rest) * H
