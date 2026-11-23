@@ -69,7 +69,6 @@ def splitNewData() -> None:
         # content.append(filename)
         splitSingleFile(training_data_path=dataFilename, labels_data_path=labelsFilename)
 
-
 # creating pytorch's datasets
 class bottleDataset(Dataset):
     def __init__(self, data_path, labels_path, dataInputSize, labelsInputSize):
