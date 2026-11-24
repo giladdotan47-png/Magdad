@@ -14,17 +14,12 @@ class RNN(nn.Module):
         self.i2h1 = nn.Linear(hidden_size, hidden_size)
         self.i2hSig1 = nn.Sigmoid()
         self.i2h2 = nn.Linear(hidden_size, hidden_size)
-        self.i2hSig2 = nn.Sigmoid()
-        self.i2h3 = nn.Linear(hidden_size, hidden_size)
-        self.i2h4 = nn.Linear(hidden_size, hidden_size)
 
         self.i2o = nn.Linear(input_size + hidden_size, hidden_size)
         self.i2oSig = nn.Sigmoid()
         self.i2o1 = nn.Linear(hidden_size, hidden_size)
         self.i2oSig1 = nn.Sigmoid()
-        self.i2o2 = nn.Linear(hidden_size, hidden_size)
-        self.i2oSig2 = nn.Sigmoid()
-        self.i2o3 = nn.Linear(hidden_size, output_size)
+        self.i2o2 = nn.Linear(hidden_size, output_size)
 
     def forward(self, input_tensor, hidden_tensor):
         combined = torch.cat((input_tensor, hidden_tensor), 1)
@@ -34,18 +29,12 @@ class RNN(nn.Module):
         hidden = self.i2h1(hidden)
         hidden = self.i2hSig1(hidden)
         hidden = self.i2h2(hidden)
-        hidden = self.i2hSig2(hidden)
-        hidden = self.i2h3(hidden)
-        hidden = torch.tanh(hidden)
-        hidden = self.i2h4(hidden)
 
         output = self.i2o(combined)
         output = self.i2oSig(output)
         output = self.i2o1(output)
         output = self.i2oSig1(output)
         output = self.i2o2(output)
-        output = self.i2oSig2(output)
-        output = self.i2o3(output)
 
         return output, hidden
 
@@ -64,4 +53,11 @@ model = RNN(INPUT_DIM, HIDDEN_DIM, OUTPUT_DIM)
 basedir = os.path.dirname(__file__)
 basedir = os.path.join(basedir, "model_weights_final.pt")
 
-model.load_state_dict(torch.load(basedir, weights_only=True))
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+# Pass map_location to torch.load
+checkpoint = torch.load(basedir, map_location=device)
+model.load_state_dict(checkpoint)
+
+#model.load_state_dict(torch.load(basedir, weights_only=True))
+model.eval()

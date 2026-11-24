@@ -15,7 +15,6 @@ class RNN(nn.Module):
         self.i2h2 = nn.Linear(hidden_size, hidden_size)
         self.i2hSig2 = nn.Sigmoid()
         self.i2h3 = nn.Linear(hidden_size, hidden_size)
-        self.i2h4 = nn.Linear(hidden_size, hidden_size)
 
         self.i2o = nn.Linear(input_size + hidden_size, hidden_size)
         self.i2oSig = nn.Sigmoid()
@@ -35,8 +34,6 @@ class RNN(nn.Module):
         hidden = self.i2h2(hidden)
         hidden = self.i2hSig2(hidden)
         hidden = self.i2h3(hidden)
-        hidden = torch.tanh(hidden)
-        hidden = self.i2h4(hidden)
 
         output = self.i2o(combined)
         output = self.i2oSig(output)

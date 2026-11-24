@@ -146,6 +146,14 @@ class bottleDataset(Dataset):
         return self.getVid(idx)
 
 
+def loadTrain():
+    trainDataset = bottleDataset(data_path=TRAINING_DATA_FILENAME, dataInputSize=5, labelsInputSize=1)
+    return trainDataset
+
+def loadTest():
+    testDataset = bottleDataset(data_path=TEST_DATA_FILENAME, dataInputSize=5, labelsInputSize=1)
+    return testDataset
+
 def loadSets():
     # creating pytorch's dataloaders
     trainDataset = bottleDataset(data_path=TRAINING_DATA_FILENAME, dataInputSize=5, labelsInputSize=1)

@@ -1,1 +1,1 @@
-from .handler import initVid, processFrame, csvToTensors
+from .handler import initVid, predictFrame, csvToTensors
