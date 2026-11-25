@@ -86,7 +86,7 @@ WRITE_HEADER = False
 
 # How many attempts to save as short video clips, per long video (the first N), to see what was cut.
 # 0 = don't save any clips.
-NUM_CLIPS_TO_SAVE = 10
+NUM_CLIPS_TO_SAVE = 0
 CLIPS_DIR = Path("/content/drive/MyDrive/Magdad/clipped_GoPro_vids_")
 
 # ---------------- parameters to tune ----------------
@@ -97,6 +97,8 @@ MOVE_PX = 8              # displacement (pixels) over MOVE_WINDOW frames that co
 MIN_MOVING_FRAMES = 10   # an attempt needs at least this many moving frames
 PAD_START = 5            # extra frames kept before the first movement
 PAD_END = 10             # extra frames kept after the last movement
+MIN_ATTEMPT_DURATION_SECONDS = 0.4  # discard attempts shorter than this (0.25 s = 30 frames at 120 FPS)
+
 
 FIELDS = ["xcap", "ycap", "zcap", "xbottle", "ybottle", "zbottle", "duration"]
 
@@ -158,7 +160,7 @@ def open_at(video, skip, found, bottle):
     return cap
 
 
-def read_frames_ffmpeg(video):
+# def read_frames_ffmpeg(video):
     """Yield BGR frames decoded by ffmpeg with GPU (NVDEC) decoding, piped as raw video."""
     # Frame size and the reference first frame, exactly as cv2 would deliver them
     cap = cv2.VideoCapture(str(video))
@@ -336,7 +338,6 @@ def get_frame_dimensions(video):
         raise RuntimeError(f"Invalid frame dimensions ({width}x{height}) in {video}")
     return width, height
 
-
 def infer_upright_sign(valid, bottle, capc):
     """+1 if the cap has the larger z when the bottle stands upright, -1 otherwise."""
     if UPRIGHT_SIGN is not None:
@@ -467,7 +468,7 @@ def main():
         if p.is_file() and p.suffix.lower() in {".mp4", ".mov", ".avi", ".mkv"}
     )
     rows, segment_log = [], []
-    n_dropped = n_out_of_range = 0
+    n_dropped = n_out_of_range = n_short_attempts = 0
 
     for video in videos:
         print(f"{video.name}")
@@ -475,9 +476,26 @@ def main():
         print(f"  frame size: {frame_width}x{frame_height}")
         found, sure, bottle, capc = detect_all(video)
         valid = (found & sure) if USE_SURE else found
-        segments = find_attempts(valid, bottle)
+        all_segments = find_attempts(valid, bottle)
+
+        # Filter individual flip attempts by their detected segment duration.
+        # The duration includes PAD_START/PAD_END frames added by find_attempts.
+        segments = []
+        for attempt_start, attempt_end in all_segments:
+            attempt_duration = (attempt_end - attempt_start + 1) / FRAME_RATE
+            if attempt_duration < MIN_ATTEMPT_DURATION_SECONDS:
+                n_short_attempts += 1
+                print(
+                    f"  SKIPPED short attempt: frames {attempt_start}-{attempt_end}, "
+                    f"duration={attempt_duration:.3f}s "
+                    f"(< {MIN_ATTEMPT_DURATION_SECONDS:.3f}s)"
+                )
+                continue
+            segments.append((attempt_start, attempt_end))
+
         upright = infer_upright_sign(valid, bottle, capc)
-        print(f"  {len(segments)} attempts (upright bottle = cap has the "
+        print(f"  {len(segments)} attempts kept out of {len(all_segments)} "
+              f"(upright bottle = cap has the "
               f"{'larger' if upright > 0 else 'smaller'} z)")
 
         dropped_here = 0
@@ -529,11 +547,14 @@ def main():
         writer.writerow(["row_name", "source_video", "start_frame", "end_frame", "label_frame"])
         writer.writerows(segment_log)
 
-    print(f"\nSaved {len(rows)} rows ({n_dropped} attempts dropped) to {OUTPUT_CSV}")
+    print(
+        f"\nSaved {len(rows)} rows to {OUTPUT_CSV}; "
+        f"{n_short_attempts} short attempts filtered; "
+        f"{n_dropped} attempts dropped because no usable label was found."
+    )
     if n_out_of_range:
         print(f"Note: {n_out_of_range} label z coordinates fall outside 0-1 "
               "(the detected bottle center is outside the frame's vertical pixel bounds).")
-
 
 if __name__ == "__main__":
     main()
