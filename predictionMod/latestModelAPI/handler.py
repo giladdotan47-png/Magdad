@@ -66,9 +66,12 @@ def predToHeight(pred):
     """
     W_px=1920
     H_px=1080
-    z_bottom_px = 730
-    z_middle_px = 633
-    z_top_px = 543
+    z_bottom_px = 716
+    z_middle_px = 624
+    z_top_px = 527
+    bottle_offset_cm = 10.25
+
+
     z_bottom_norm = (H_px - z_bottom_px) / H_px
     z_middle_norm= (H_px - z_middle_px) / H_px
     z_top_norm = (H_px - z_top_px) / H_px
@@ -79,4 +82,4 @@ def predToHeight(pred):
     NORM_FACTOR = (delta_z_cm / delta_z_norm)
     pred_norm = (H_px - pred) / H_px
 
-    return (pred_norm - z_middle_norm) * NORM_FACTOR
+    return (pred_norm - z_middle_norm) * NORM_FACTOR - bottle_offset_cm
