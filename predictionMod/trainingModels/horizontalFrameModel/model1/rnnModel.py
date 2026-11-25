@@ -60,7 +60,7 @@ if torch.cuda.is_available():
 # deciding on the loss
 criterion = nn.MSELoss()
 
-optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.1)
+optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.01)
 torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
 #optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
