@@ -125,7 +125,7 @@ class bottleDataset(Dataset):
             for argIdx in range(self._labelsInputSize):
                 labelTensor[0][argIdx] = float(label[argIdx])
 
-            if vidTensor.size(0) > 60:
+            if vidTensor.size(0) > 90:
                 self._yTensors[counter] = labelTensor
                 self._xTensors[counter] = vidTensor
                 counter += 1
@@ -146,14 +146,6 @@ class bottleDataset(Dataset):
         return self.getVid(idx)
 
 
-def loadTrain():
-    trainDataset = bottleDataset(data_path=TRAINING_DATA_FILENAME, dataInputSize=5, labelsInputSize=1)
-    return trainDataset
-
-def loadTest():
-    testDataset = bottleDataset(data_path=TEST_DATA_FILENAME, dataInputSize=5, labelsInputSize=1)
-    return testDataset
-
 def loadSets():
     # creating pytorch's dataloaders
     trainDataset = bottleDataset(data_path=TRAINING_DATA_FILENAME, dataInputSize=5, labelsInputSize=1)
@@ -163,3 +155,12 @@ def loadSets():
     testDataset = bottleDataset(data_path=TEST_DATA_FILENAME, dataInputSize=5, labelsInputSize=1)
 
     return trainDataset, validationDataset, testDataset
+
+
+def loadTrain():
+    trainDataset = bottleDataset(data_path=TRAINING_DATA_FILENAME, dataInputSize=5, labelsInputSize=1)
+    return trainDataset
+
+def loadTest():
+    testDataset = bottleDataset(data_path=TEST_DATA_FILENAME, dataInputSize=5, labelsInputSize=1)
+    return testDataset

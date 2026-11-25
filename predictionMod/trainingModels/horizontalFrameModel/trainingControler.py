@@ -16,7 +16,7 @@ def trainModelCont(trainDataset, validationDataset, testDataset):
         from .model1.constants import N_ITERS, BATCH_SIZE, PRINT_STEPS
         from .model1.rnnModel import model, optimizer, criterion
 
-    userInput = "n"
+    userInput = ""
     while userInput not in ["y", "n"]:
         userInput = input("do you want to load the pretrained weights? (y/n) ")
 
@@ -24,7 +24,8 @@ def trainModelCont(trainDataset, validationDataset, testDataset):
         import os
         dir_path = os.path.dirname(os.path.realpath(__file__))
         dir_path = os.path.join(dir_path, "model1")
-        dir_path = os.path.join(dir_path, "model_weights_final.pt")
+        dir_path = os.path.join(dir_path, "model_weights_cont.pt")
+        print(f"loading weights from {dir_path}")
         model.load_state_dict(torch.load(dir_path, weights_only=True))
         model.eval()
 
