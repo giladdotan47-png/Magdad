@@ -7,8 +7,13 @@ TRAIN_SIZE = 0.8
 VAL_SIZE = 0.15
 TEST_SIZE = 0.05
 
+# data constants
 DATA_PER_FRAME = 7
+DATA_PER_LABEL = 2
 
+MIN_FRAMES_PER_VIDS = 90
+
+# path constants
 NEW_DATA_PATH = "newData"
 NEW_LABELS_PATH = "newLabels"
 
